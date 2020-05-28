@@ -70,7 +70,7 @@ class Artist(db.Model):
 
 class Show(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    start_time = db.Column(db.Date, nullable=False)
+    start_time = db.Column(db.DateTime, nullable=False)
     venue_id = db.Column(db.Integer, db.ForeignKey("Venue.id"), nullable=False)
     artist_id = db.Column(db.Integer, db.ForeignKey(
         "Artist.id"), nullable=False)
@@ -568,10 +568,24 @@ def create_shows():
 def create_show_submission():
     # called to create new shows in the db, upon submitting new show listing form
     # TODO: insert form data as a new Show record in the db, instead
-
+    print("\nCreating a new show:\n")
+    data = {}
+    try:
+        data['start_time'] = format_datetime(request.form['start_time'])
+        data['venue_id'] = request.form['venue_id']
+        data['artist_id'] = request.form['artist_id']
+        print(data)
+        flash('Show was successfully listed!')
+        new_show = Show(
+            start_time=data['start_time'], artist_id=data["artist_id"], venue_id=data['venue_id'])
+        db.session.add(new_show)
+        db.session.commit()
+    except:
+        print("\n\n Error Occured\n\n")
+        flash('Show could not be listed!')
+        db.session.rollback()
     # on successful db insert, flash success
-    flash('Show was successfully listed!')
-    # TODO: on unsuccessful db insert, flash an error instead.
+    # TODONE: on unsuccessful db insert, flash an error instead.
     # e.g., flash('An error occurred. Show could not be listed.')
     # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
     return render_template('pages/home.html')
