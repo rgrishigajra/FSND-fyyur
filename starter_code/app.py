@@ -1,7 +1,10 @@
 #----------------------------------------------------------------------------#
 # Imports
 #----------------------------------------------------------------------------#
-
+# all_areas = Venue.query.with_entities(func.count(
+#     Venue.id), Venue.city, Venue.state).group_by(Venue.city, Venue.state).all()
+# data = []
+# print(all_areas)
 import json
 import dateutil.parser
 import babel
@@ -14,6 +17,7 @@ from flask_wtf import Form
 from forms import *
 from flask_migrate import Migrate
 import sys
+from sqlalchemy import func
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
@@ -47,6 +51,9 @@ class Venue(db.Model):
     genres = db.Column(db.String(120))
     # TODONE: implement any missing fields, as a database migration using Flask-Migrate
 
+    def __repr__(self):
+        return f'<Venue {self.id} {self.name} {self.city} {self.state}>'
+
 
 class Artist(db.Model):
     __tablename__ = 'Artist'
@@ -65,6 +72,8 @@ class Artist(db.Model):
     shows = db.relationship("Show", backref='artist', lazy=True)
     # TODONE: implement any missing fields, as a database migration using Flask-Migrate
 
+    def __repr__(self):
+        return f'<Venue {self.id} {self.name} {self.city} {self.state} >'
 # TODONE Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
 
 
@@ -74,6 +83,9 @@ class Show(db.Model):
     venue_id = db.Column(db.Integer, db.ForeignKey("Venue.id"), nullable=False)
     artist_id = db.Column(db.Integer, db.ForeignKey(
         "Artist.id"), nullable=False)
+
+    def __repr__(self):
+        return f'<Show {self.id} {self.start_time} {self.artist_id} {self.venue_id}>'
 #----------------------------------------------------------------------------#
 # Filters.
 #----------------------------------------------------------------------------#
@@ -105,9 +117,10 @@ def index():
 
 @app.route('/venues')
 def venues():
-    # TODO: replace with real venues data.
+    # TODONE: replace with real venues data.
     #       num_shows should be aggregated based on number of upcoming shows per venue.
-    data = [{
+
+    data_dummy = [{
         "city": "San Francisco",
         "state": "CA",
         "venues": [{
@@ -128,7 +141,34 @@ def venues():
             "num_upcoming_shows": 0,
         }]
     }]
-    return render_template('pages/venues.html', areas=data)
+    area_object = []
+    print("\n\nReturning Venue list:\n")
+    try:
+        all_areas = Venue.query.with_entities(func.count(
+            Venue.id), Venue.city, Venue.state).group_by(Venue.city, Venue.state)
+        for area in all_areas:
+            data = {}
+            # print(area[0], area[1], area[2])
+            # print(Venue.query.filter_by(
+            #     city=area[1]).filter_by(state=area[2]).all())
+            data["city"] = area[1]
+            data["state"] = area[2]
+            data["venues"] = []
+            vs = Venue.query.filter_by(
+                city=area[1]).filter_by(state=area[2]).all()
+            for v in vs:
+                data["venues"].append({
+                    "id": v.id,
+                    "name": v.name,
+                    "num_upcoming_shows": Show.query.with_entities(func.count(Show.id)).filter_by(venue_id=v.id).filter(Show.start_time>datetime.now()).all()[0][0]
+                })
+            area_object.append(data)
+        # print(all_areas.all())
+        for a in area_object:
+            print(a)
+    except:
+        print(sys.exc_info())
+    return render_template('pages/venues.html', areas=area_object)
 
 
 @app.route('/venues/search', methods=['POST'])
@@ -567,7 +607,7 @@ def create_shows():
 @app.route('/shows/create', methods=['POST'])
 def create_show_submission():
     # called to create new shows in the db, upon submitting new show listing form
-    # TODO: insert form data as a new Show record in the db, instead
+    # TODONE: insert form data as a new Show record in the db, instead
     print("\nCreating a new show:\n")
     data = {}
     try:
