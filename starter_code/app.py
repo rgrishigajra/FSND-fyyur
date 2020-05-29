@@ -119,28 +119,27 @@ def index():
 def venues():
     # TODONE: replace with real venues data.
     #       num_shows should be aggregated based on number of upcoming shows per venue.
-
-    data_dummy = [{
-        "city": "San Francisco",
-        "state": "CA",
-        "venues": [{
-            "id": 1,
-            "name": "The Musical Hop",
-            "num_upcoming_shows": 0,
-        }, {
-            "id": 3,
-            "name": "Park Square Live Music & Coffee",
-            "num_upcoming_shows": 1,
-        }]
-    }, {
-        "city": "New York",
-        "state": "NY",
-        "venues": [{
-            "id": 2,
-            "name": "The Dueling Pianos Bar",
-            "num_upcoming_shows": 0,
-        }]
-    }]
+    # data_dummy = [{
+    #     "city": "San Francisco",
+    #     "state": "CA",
+    #     "venues": [{
+    #         "id": 1,
+    #         "name": "The Musical Hop",
+    #         "num_upcoming_shows": 0,
+    #     }, {
+    #         "id": 3,
+    #         "name": "Park Square Live Music & Coffee",
+    #         "num_upcoming_shows": 1,
+    #     }]
+    # }, {
+    #     "city": "New York",
+    #     "state": "NY",
+    #     "venues": [{
+    #         "id": 2,
+    #         "name": "The Dueling Pianos Bar",
+    #         "num_upcoming_shows": 0,
+    #     }]
+    # }]
     area_object = []
     print("\n\nReturning Venue list:\n")
     try:
@@ -160,7 +159,7 @@ def venues():
                 data["venues"].append({
                     "id": v.id,
                     "name": v.name,
-                    "num_upcoming_shows": Show.query.with_entities(func.count(Show.id)).filter_by(venue_id=v.id).filter(Show.start_time>datetime.now()).all()[0][0]
+                    "num_upcoming_shows": Show.query.with_entities(func.count(Show.id)).filter_by(venue_id=v.id).filter(Show.start_time > datetime.now()).all()[0][0]
                 })
             area_object.append(data)
         # print(all_areas.all())
@@ -335,17 +334,29 @@ def delete_venue(venue_id):
 #  ----------------------------------------------------------------
 @app.route('/artists')
 def artists():
-    # TODO: replace with real data returned from querying the database
-    data = [{
-        "id": 4,
-        "name": "Guns N Petals",
-    }, {
-        "id": 5,
-        "name": "Matt Quevedo",
-    }, {
-        "id": 6,
-        "name": "The Wild Sax Band",
-    }]
+    # TODONE: replace with real data returned from querying the database
+    # dummy_data = [{
+    #     "id": 4,
+    #     "name": "Guns N Petals",
+    # }, {
+    #     "id": 5,
+    #     "name": "Matt Quevedo",
+    # }, {
+    #     "id": 6,
+    #     "name": "The Wild Sax Band",
+    # }]
+    # print("\n\nReturning Artists:\n\n")
+    data = []
+    try:
+        artists = Artist.query.with_entities(Artist.id, Artist.name).all()
+        for a in artists:
+            data.append({
+                'id': a.id,
+                'name': a.name
+            })
+        print(data)
+    except:
+        print(sys.exc_info())
     return render_template('pages/artists.html', artists=data)
 
 
@@ -558,7 +569,7 @@ def shows():
     # displays list of shows at /shows
     # TODO: replace with real venues data.
     #       num_shows should be aggregated based on number of upcoming shows per venue.
-    data = [{
+    dummy_data = [{
         "venue_id": 1,
         "venue_name": "The Musical Hop",
         "artist_id": 4,
@@ -594,6 +605,24 @@ def shows():
         "artist_image_link": "https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80",
         "start_time": "2035-04-15T20:00:00.000Z"
     }]
+    data = []
+    print("\n\nReturning list of shows:\n\n")
+    try:
+        shows = db.session.query(Show).join(Artist).join(Venue).all()
+        for show in shows:
+            print(show)
+            data.append({
+                "venue_id": show.venue_id,
+                "venue_name": show.venue.name,
+                "artist_id": show.artist_id,
+                "artist_name": show.artist.name,
+                "artist_image_link": show.artist.image_link,
+                "start_time": show.start_time.strftime('%Y-%m-%d %H:%M:%S')
+            })
+        # for d in data:
+        #     print(d)
+    except:
+        print(sys.exc_info())
     return render_template('pages/shows.html', shows=data)
 
 
